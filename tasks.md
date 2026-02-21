@@ -7,7 +7,7 @@
 - [ ] **P3:** Unsplash developer account created, Access Key stored in 1Password “Eviebot” vault
 - [ ] **P4:** GitHub repo `EvieHwang/mood-playlist-mcp` created with these spec files committed
 - [ ] **P5:** 1Password items created in “Eviebot” vault: `Apple MusicKit Team ID`, `Apple MusicKit Key ID`, `Apple MusicKit Private Key`, `Unsplash Access Key`, `Mood Playlist OAuth Consent Password`, `Mood Playlist JWT Secret`. (Music User Token added later in T19.)
-- [ ] **P6:** Tailscale Funnel enabled on evBot (if not already from Fastmail MCP setup)
+- [ ] **P6:** Tailscale Funnel enabled on EvieBot (if not already from Fastmail MCP setup)
 
 -----
 

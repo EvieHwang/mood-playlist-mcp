@@ -9,7 +9,7 @@ Claude iOS/Web (Anthropic servers)
     ↓ OAuth 2.1 authenticated MCP request
 Tailscale Funnel (public HTTPS)
     ↓ routes to local process
-evBot Mac Mini (this server)
+Eviebot Mac Mini (this server)
     ├── OAuth 2.1 endpoints (discovery, registration, authorize, token)
     ├── MCP protocol handler (tool discovery, execution)
     ├── Apple Music client (search, create playlist)
@@ -17,7 +17,7 @@ evBot Mac Mini (this server)
     └── Secrets: 1Password CLI or env vars
 ```
 
-### Deployment Architecture: Tailscale Funnel on evBot
+### Deployment Architecture: Tailscale Funnel on Eviebot
 
 ```
 Internet
@@ -26,7 +26,7 @@ https://eviebot.<tailnet>.ts.net
     ↓ Tailscale Funnel → localhost:3000
 Node.js process (Streamable HTTP MCP server + co-located OAuth server)
     ↓ managed by launchd
-evBot Mac Mini
+Eviebot Mac Mini
 ```
 
 **Components:**
@@ -77,9 +77,9 @@ The server acts as both MCP resource server and OAuth authorization server in on
 
 ## Key Technical Decisions
 
-### Secrets Management (evBot)
+### Secrets Management (Eviebot)
 
-On evBot, secrets are loaded from **1Password CLI** (`op read`) at process startup, same pattern as the Fastmail MCP server:
+On Eviebot, secrets are loaded from **1Password CLI** (`op read`) at process startup, same pattern as the Fastmail MCP server:
 
 ```bash
 export APPLE_TEAM_ID=$(op read "op://Eviebot/Apple MusicKit Team ID/credential")
@@ -211,4 +211,4 @@ Automated tests cover the deterministic logic. API integration is tested manuall
 |Tailscale Funnel unreliable             |Low-Medium|Funnel proven with Fastmail MCP; launchd auto-restart             |
 |Apple Music API rate limiting           |Low       |Only a few requests/week; no mitigation needed                    |
 |Playlist artwork API limitations        |High      |Fall back to including image URL in description                   |
-|evBot power/network outage              |Low       |macOS auto-restart configured; not mission-critical               |
+|Eviebot power/network outage              |Low       |macOS auto-restart configured; not mission-critical               |

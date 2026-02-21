@@ -11,7 +11,7 @@ This is a remote MCP server that enables Claude (via iOS/web) to create Apple Mu
 - **Language:** TypeScript 5.x (strict mode)
 - **Runtime:** Node.js 20+
 - **Framework:** MCP TypeScript SDK (`@modelcontextprotocol/sdk`)
-- **Deployment:** Tailscale Funnel on evBot Mac Mini
+- **Deployment:** Tailscale Funnel on Eviebot Mac Mini
 - **Infrastructure:** `launchd` plist for process management
 - **Package manager:** npm
 - **Linting:** ESLint + Prettier
@@ -36,7 +36,7 @@ Claude (Anthropic servers)
   ↓ OAuth 2.1 authenticated MCP calls
 Tailscale Funnel (public HTTPS)
   ↓ routes to localhost:3000
-evBot Mac Mini (this server: MCP resource server + co-located OAuth server)
+Eviebot Mac Mini (this server: MCP resource server + co-located OAuth server)
   ↓ Developer Token + Music User Token
 Apple Music API
   ↓ playlist appears in user's library

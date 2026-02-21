@@ -146,9 +146,9 @@ This is a one-time setup tool, not part of the running server.
 
 ### R10: Deployment
 
-**Tailscale Funnel on evBot (Mac Mini)**
+**Tailscale Funnel on EvieBot (Mac Mini)**
 
-The server runs as a persistent process on evBot (the Mac Mini dev server), exposed to the internet via Tailscale Funnel. This matches the architecture already proven with the Fastmail MCP server.
+The server runs as a persistent process on EvieBot (the Mac Mini dev server), exposed to the internet via Tailscale Funnel. This matches the architecture already proven with the Fastmail MCP server.
 
 - Server runs via `node` as a Streamable HTTP server on localhost:3000
 - Tailscale Funnel provides public HTTPS URL: `https://eviebot.<tailnet>.ts.net`

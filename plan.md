@@ -38,9 +38,9 @@ Eviebot Mac Mini
 
 ### OAuth 2.1 Architecture
 
-The server acts as both MCP resource server and OAuth authorization server in one process.
+The server acts as both MCP resource server and OAuth authorization server in one process. The MCP TypeScript SDK (v1.26.0+) provides `mcpAuthRouter()` which handles all standard OAuth 2.1 endpoints automatically. We implement the `OAuthServerProvider` interface with our single-user consent logic and JWT signing.
 
-**Endpoints:**
+**Endpoints (auto-registered by `mcpAuthRouter()`):**
 
 |Path                                     |Method|Purpose                                                  |
 |-----------------------------------------|------|---------------------------------------------------------|
@@ -52,7 +52,46 @@ The server acts as both MCP resource server and OAuth authorization server in on
 |`/token`                                 |POST  |Token exchange — auth code → access token (JWT)          |
 |`/mcp`                                   |POST  |MCP Streamable HTTP endpoint (requires Bearer token)     |
 
-**Flow:**
+**What the SDK handles:**
+
+- Discovery endpoint responses (RFC 9728, RFC 8414)
+- DCR client registration, ID generation, and storage delegation
+- PKCE `code_verifier` validation against `code_challenge` (S256)
+- `resource` parameter validation (RFC 8707)
+- Bearer token extraction and `WWW-Authenticate` header on 401
+- Rate limiting on all auth endpoints
+
+**What we implement (via `OAuthServerProvider` interface):**
+
+- `authorize()` — render HTML consent page, check pre-shared password, issue authorization code
+- `exchangeAuthorizationCode()` — sign and return JWT access token + refresh token
+- `exchangeRefreshToken()` — validate refresh token, rotate, return new token pair
+- `verifyAccessToken()` — verify JWT signature, expiry, and audience claim
+- `challengeForAuthorizationCode()` — store/retrieve PKCE challenge for auth codes
+- `clientsStore` — in-memory `Map<string, OAuthClientInformationFull>`
+
+**Wiring pattern:**
+
+```typescript
+import { mcpAuthRouter } from "@modelcontextprotocol/sdk/server/auth/router.js";
+import { requireBearerAuth } from "@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js";
+
+const provider = new MoodPlaylistOAuthProvider(config);
+
+// Install all OAuth endpoints
+app.use(mcpAuthRouter({
+  provider,
+  issuerUrl: serverUrl,
+  scopesSupported: ["mcp:tools"],
+  resourceName: "Mood Playlist MCP",
+  resourceServerUrl: serverUrl,
+}));
+
+// Protect MCP endpoint
+app.post("/mcp", requireBearerAuth({ verifier: provider }), mcpHandler);
+```
+
+**Flow (unchanged — SDK handles steps 2-5, 9 automatically):**
 
 ```
 1. Claude sends MCP request to /mcp
@@ -74,6 +113,12 @@ The server acts as both MCP resource server and OAuth authorization server in on
 - Client registrations stored in memory (only one client — Claude)
 - JWTs signed with a server secret (from 1Password), no external key management
 - Refresh tokens rotated on each use (public client requirement)
+
+**Security notes:**
+
+- Use SDK v1.26.0+ (fixes cross-client response data leakage — GHSA-345p-7cg4-v4c7)
+- Resource Indicators (RFC 8707) are mandatory — tokens must be audience-bound to this server's URL
+- `verifyAccessToken()` must check `aud` claim matches the server URL
 
 ## Key Technical Decisions
 
@@ -184,15 +229,15 @@ Take the first result’s `urls.regular` (1080px wide). Include in playlist desc
 
 ```json
 {
-  "@modelcontextprotocol/sdk": "latest",
-  "@aws-sdk/client-secrets-manager": "^3",
+  "@modelcontextprotocol/sdk": "^1.26.0",
+  "express": "^4",
   "jsonwebtoken": "^9",
   "string-similarity": "^4",
   "node-fetch": "^3"
 }
 ```
 
-Dev dependencies: `typescript`, `vitest`, `eslint`, `prettier`, `@types/node`, `@types/jsonwebtoken`
+Dev dependencies: `typescript`, `vitest`, `eslint`, `prettier`, `@types/node`, `@types/jsonwebtoken`, `@types/express`
 
 ## Testing Strategy
 

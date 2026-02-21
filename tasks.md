@@ -121,53 +121,32 @@
 
 ## Phase 4: OAuth 2.1 + Deployment
 
-### T12: OAuth discovery endpoints
+The MCP TypeScript SDK (v1.26.0+) provides `mcpAuthRouter()` which auto-registers all standard OAuth 2.1 endpoints (discovery, DCR, authorize, token) and `requireBearerAuth()` middleware. We implement the `OAuthServerProvider` interface with our single-user logic rather than building endpoints manually.
 
-- [ ] Implement `src/auth/oauth.ts`
-- [ ] `GET /.well-known/oauth-protected-resource` — returns Protected Resource Metadata (RFC 9728) pointing to the co-located authorization server
-- [ ] `GET /.well-known/oauth-authorization-server` — returns Authorization Server Metadata (RFC 8414) with endpoints, supported grant types, PKCE requirement
-- [ ] Verify: both endpoints return valid JSON; metadata URLs are consistent
+### T12: OAuthServerProvider implementation
 
-### T13: Dynamic Client Registration
-
-- [ ] `POST /register` — accepts client metadata per RFC 7591, returns `client_id` + `client_secret`
-- [ ] Store registered clients in memory (single client expected — Claude)
-- [ ] Verify: registration returns valid client credentials
-
-### T14: Authorization + consent page
-
-- [ ] `GET /authorize` — renders HTML consent page with password field
-- [ ] Validate `client_id`, `redirect_uri`, `code_challenge` (PKCE S256), `state`
-- [ ] `POST /authorize` — validates pre-shared password (from `OAUTH_CONSENT_PASSWORD` env var), issues authorization code
-- [ ] Authorization codes are short-lived (10 minutes), single-use, bound to PKCE challenge
-- [ ] Redirect back to client with `code` and `state`
-- [ ] Verify: consent page renders; correct password produces redirect with code; wrong password shows error
-
-### T15: Token endpoint
-
-- [ ] `POST /token` — exchanges authorization code for access token
-- [ ] Validate PKCE `code_verifier` against stored `code_challenge`
-- [ ] Validate `resource` parameter (RFC 8707) matches this server’s URL
-- [ ] Issue JWT access token signed with `JWT_SIGNING_SECRET`, audience-bound to this server
-- [ ] Issue refresh token; rotate on each use (public client requirement)
-- [ ] Support `grant_type=authorization_code` and `grant_type=refresh_token`
-- [ ] Verify: valid code exchange returns JWT; invalid code/verifier returns error
-
-### T16: Token validation middleware
-
-- [ ] Middleware on `/mcp` endpoint: validate `Authorization: Bearer <token>` header
-- [ ] Verify JWT signature, expiry, and audience
-- [ ] Return `401 Unauthorized` with `WWW-Authenticate` header if invalid/missing
-- [ ] Write unit tests: valid token passes, expired token rejected, wrong audience rejected, missing token returns 401 with proper header
+- [ ] Implement `src/auth/oauth-provider.ts` — class implementing `OAuthServerProvider` interface
+- [ ] `clientsStore`: in-memory `Map<string, OAuthClientInformationFull>` with `getClient()` and `registerClient()`
+- [ ] `authorize()`: render HTML consent page with password field; validate pre-shared password from `OAUTH_CONSENT_PASSWORD` env var; issue short-lived (10 min) single-use authorization code bound to PKCE challenge; redirect back with `code` and `state`
+- [ ] `challengeForAuthorizationCode()`: return stored PKCE `code_challenge` for a given auth code
+- [ ] `exchangeAuthorizationCode()`: sign JWT access token with `JWT_SIGNING_SECRET`, audience-bound to server URL; generate and return refresh token; validate `resource` parameter (RFC 8707)
+- [ ] `exchangeRefreshToken()`: validate refresh token, rotate on each use, return new token pair
+- [ ] `verifyAccessToken()`: verify JWT signature, expiry, and `aud` claim; return `AuthInfo`
+- [ ] Write unit tests: consent password validation, JWT generation/verification, refresh token rotation, expired token rejection, wrong audience rejection
 - [ ] Verify: tests pass
 
-### T17: Streamable HTTP transport + Tailscale Funnel
+### T13: Wire OAuth + MCP into Express server
 
-- [ ] Configure MCP server with Streamable HTTP transport
-- [ ] Server listens on `localhost:3000` (configurable via env)
-- [ ] Wire OAuth endpoints and MCP endpoint into same HTTP server
+- [ ] In `src/index.ts`, install `mcpAuthRouter()` with our `OAuthServerProvider` and server URL config
+- [ ] Protect `/mcp` endpoint with `requireBearerAuth()` middleware
+- [ ] Configure `StreamableHTTPServerTransport` on `/mcp`
+- [ ] Add `GET /health` endpoint (unprotected)
+- [ ] Verify: discovery endpoints return valid JSON; `/mcp` returns 401 without token; consent page renders at `/authorize`
+
+### T14: Tailscale Funnel + launchd deployment
+
 - [ ] Configure Tailscale Funnel to expose localhost:3000
-- [ ] Test: public URL reaches both discovery endpoints and MCP endpoint
+- [ ] Test: public URL reaches discovery endpoints, consent page, and MCP endpoint
 - [ ] Create `launchd` plist for auto-start (same pattern as Fastmail MCP server)
 - [ ] Load plist: `launchctl load ~/Library/LaunchAgents/com.mood-playlist-mcp.plist`
 - [ ] Verify: server restarts after crash, starts on boot
@@ -176,7 +155,7 @@
 
 ## Phase 5: MusicKit Auth Page
 
-### T18: One-time Music User Token page
+### T15: One-time Music User Token page
 
 - [ ] Create `auth-page/index.html`
 - [ ] Load MusicKit JS from Apple CDN
@@ -185,11 +164,11 @@
 - [ ] Display the Music User Token for the user to copy
 - [ ] Verify: page loads, MusicKit JS initializes (full test requires Developer Token)
 
-### T19: Integration test — Music User Token
+### T16: Integration test — Music User Token
 
 - [ ] User runs auth page, signs in, gets Music User Token
 - [ ] Token stored in 1Password “Eviebot” vault under `Apple Music User Token`
-- [ ] Add to environment: `export APPLE_MUSIC_USER_TOKEN=$(op read "op://Eviebot/Apple Music User Token/credential")`
+- [ ] Add to environment: `export APPLE_MUSIC_USER_TOKEN=$(op read “op://Eviebot/Apple Music User Token/credential”)`
 - [ ] Restart the server process
 - [ ] Test: `search_apple_music` tool returns results for “Nils Frahm Says” (via authenticated MCP request)
 - [ ] Test: `create_mood_playlist` creates a test playlist with 2-3 tracks
@@ -201,12 +180,12 @@
 
 ## Phase 6: Connect & Test
 
-### T20: CI/CD workflows
+### T17: CI/CD workflows
 
 - [ ] Create `.github/workflows/ci.yml` — lint, typecheck, test on PRs
 - [ ] Verify: CI passes on a test PR
 
-### T21: Connect to Claude
+### T18: Connect to Claude
 
 - [ ] In claude.ai: Settings → Connectors → Add Custom Connector
 - [ ] Enter the Tailscale Funnel URL
@@ -219,7 +198,7 @@
 
 ## Phase 7: Polish
 
-### T22: Error handling review
+### T19: Error handling review
 
 - [ ] Ensure all API errors return useful messages (not raw stack traces)
 - [ ] Handle Apple Music 429 (rate limit) with retry-after
@@ -227,13 +206,13 @@
 - [ ] Handle network timeouts gracefully
 - [ ] Handle OAuth errors with clear messages (invalid code, expired token, bad redirect_uri)
 
-### T23: README
+### T20: README
 
 - [ ] Write README.md with: project purpose, setup instructions, deployment guide, architecture diagram
 - [ ] Include prerequisites checklist
 - [ ] Include the benchmark test case from spec.md
 
-### T24: Token refresh mechanism
+### T21: Token refresh mechanism
 
 - [ ] Monitor Music User Token expiry
 - [ ] If token expires: log clear error message, return helpful error to Claude (“Music User Token expired — re-run auth page”)

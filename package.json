@@ -1,0 +1,42 @@
+{
+  "name": "mood-playlist-mcp",
+  "version": "1.0.0",
+  "description": "Remote MCP server for creating Apple Music playlists from mood descriptions",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint src/ tests/ && prettier --check src/ tests/",
+    "lint:fix": "eslint --fix src/ tests/ && prettier --write src/ tests/",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": ["mcp", "apple-music", "playlist"],
+  "author": "Evie Hwang",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.0",
+    "express": "^4.21.0",
+    "jsonwebtoken": "^9.0.2",
+    "string-similarity": "^4.0.4"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/node": "^22.0.0",
+    "@types/string-similarity": "^4.0.2",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.4.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^2.1.0"
+  }
+}

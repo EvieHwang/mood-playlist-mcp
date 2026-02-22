@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Apple Music — Get User Token</title>
+  <link rel="stylesheet" href="https://cdn.simplecss.org/simple.css">
+</head>
+<body>
+  <main>
+    <h1>Apple Music Authorization</h1>
+    <p>This page obtains a Music User Token for the Mood Playlist MCP server.
+       Run this once, then store the token in 1Password.</p>
+
+    <div id="status">
+      <p>Loading MusicKit JS...</p>
+    </div>
+
+    <button id="authorize-btn" disabled>Sign in with Apple Music</button>
+
+    <div id="token-output" style="display:none">
+      <h2>Your Music User Token</h2>
+      <p>Copy this token and store it in 1Password under <code>Apple Music User Token</code>.</p>
+      <textarea id="token-value" rows="6" readonly style="width:100%; font-family:monospace; font-size:0.8em"></textarea>
+      <button onclick="navigator.clipboard.writeText(document.getElementById('token-value').value)">Copy to Clipboard</button>
+    </div>
+  </main>
+
+  <script>
+    // Developer Token must be provided as a query parameter: ?token=xxx
+    const params = new URLSearchParams(window.location.search);
+    const developerToken = params.get('token');
+
+    if (!developerToken) {
+      document.getElementById('status').innerHTML =
+        '<p style="color:red">Missing developer token. Add <code>?token=YOUR_DEVELOPER_TOKEN</code> to the URL.</p>';
+    } else {
+      document.addEventListener('musickitloaded', async () => {
+        try {
+          await MusicKit.configure({
+            developerToken: developerToken,
+            app: {
+              name: 'Mood Playlist MCP',
+              build: '1.0.0',
+            },
+          });
+
+          document.getElementById('status').innerHTML = '<p>MusicKit ready. Click the button to sign in.</p>';
+          const btn = document.getElementById('authorize-btn');
+          btn.disabled = false;
+
+          btn.addEventListener('click', async () => {
+            btn.disabled = true;
+            btn.textContent = 'Authorizing...';
+
+            try {
+              const music = MusicKit.getInstance();
+              const userToken = await music.authorize();
+
+              document.getElementById('token-value').value = userToken;
+              document.getElementById('token-output').style.display = 'block';
+              document.getElementById('status').innerHTML = '<p style="color:green">Authorization successful!</p>';
+              btn.textContent = 'Done';
+            } catch (err) {
+              document.getElementById('status').innerHTML =
+                '<p style="color:red">Authorization failed: ' + err.message + '</p>';
+              btn.disabled = false;
+              btn.textContent = 'Try Again';
+            }
+          });
+        } catch (err) {
+          document.getElementById('status').innerHTML =
+            '<p style="color:red">MusicKit init failed: ' + err.message + '</p>';
+        }
+      });
+    }
+  </script>
+  <script src="https://js-cdn.music.apple.com/musickit/v3/musickit.js" async></script>
+</body>
+</html>

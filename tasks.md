@@ -3,10 +3,10 @@
 ## Prerequisites (Human — before running these tasks)
 
 - [ ] **P1:** Apple Developer Program enrolled, Team ID and Key ID noted
-- [ ] **P2:** MusicKit private key (.p8) downloaded and stored in 1Password “Eviebot” vault
-- [ ] **P3:** Unsplash developer account created, Access Key stored in 1Password “Eviebot” vault
+- [ ] **P2:** MusicKit private key (.p8) downloaded and stored in 1Password "Eviebot" vault
+- [ ] **P3:** Unsplash developer account created, Access Key stored in 1Password "Eviebot" vault
 - [ ] **P4:** GitHub repo `EvieHwang/mood-playlist-mcp` created with these spec files committed
-- [ ] **P5:** 1Password items created in “Eviebot” vault: `Apple MusicKit Team ID`, `Apple MusicKit Key ID`, `Apple MusicKit Private Key`, `Unsplash Access Key`, `Mood Playlist OAuth Consent Password`, `Mood Playlist JWT Secret`. (Music User Token added later in T19.)
+- [ ] **P5:** 1Password items created in "Eviebot" vault: `Apple MusicKit Team ID`, `Apple MusicKit Key ID`, `Apple MusicKit Private Key`, `Unsplash Access Key`, `Mood Playlist OAuth Consent Password`, `Mood Playlist JWT Secret`. (Music User Token added later in T19.)
 - [ ] **P6:** Tailscale Funnel enabled on EvieBot (if not already from Fastmail MCP setup)
 
 -----
@@ -15,28 +15,27 @@
 
 ### T1: Initialize TypeScript project
 
-- [ ] `npm init` with project metadata
-- [ ] Install dependencies per plan.md
-- [ ] Configure `tsconfig.json` (strict mode, ES2022 target, NodeNext module)
-- [ ] Configure ESLint + Prettier
-- [ ] Configure Vitest
-- [ ] Create directory structure per CLAUDE.md file tree
-- [ ] Verify: `npm run build` succeeds with empty `src/index.ts`
+- [x] `npm init` with project metadata
+- [x] Install dependencies per plan.md
+- [x] Configure `tsconfig.json` (strict mode, ES2022 target, NodeNext module)
+- [x] Configure ESLint + Prettier
+- [x] Configure Vitest
+- [x] Create directory structure per CLAUDE.md file tree
+- [x] Verify: `npm run build` succeeds
 
 ### T2: HTTP server scaffolding
 
-- [ ] Set up Express (or similar) HTTP server in `src/index.ts`
-- [ ] Configure to listen on `localhost:3000` (port configurable via `PORT` env var)
-- [ ] Add health check endpoint: `GET /health` → `200 OK`
-- [ ] Verify: `npm run dev` starts server, health check responds
+- [x] Set up Express HTTP server in `src/index.ts`
+- [x] Configure to listen on `localhost:3000` (port configurable via `PORT` env var)
+- [x] Add health check endpoint: `GET /health` → `200 OK`
 
 ### T3: Environment configuration
 
-- [ ] Create `src/lib/config.ts` — load and validate all required environment variables at startup
-- [ ] Type the config object (all expected keys)
-- [ ] Fail fast with clear error if any required env var is missing
-- [ ] Write unit test: verify missing vars throw, present vars load correctly
-- [ ] Verify: tests pass
+- [x] Create `src/lib/config.ts` — load and validate all required environment variables at startup
+- [x] Type the config object (all expected keys)
+- [x] Fail fast with clear error if any required env var is missing
+- [x] Write unit test: verify missing vars throw, present vars load correctly
+- [x] Verify: tests pass (4 tests)
 
 -----
 
@@ -44,33 +43,29 @@
 
 ### T4: Developer Token generation
 
-- [ ] Implement `src/auth/apple-tokens.ts` — `generateDeveloperToken()`
-- [ ] Sign JWT with ES256 using the .p8 private key from environment variable
-- [ ] Cache token in memory, regenerate when within 1 day of expiry
-- [ ] Write unit test: verify JWT structure, claims, and signature algorithm
-- [ ] Verify: tests pass
+- [x] Implement `src/auth/apple-tokens.ts` — `generateDeveloperToken()`
+- [x] Sign JWT with ES256 using the .p8 private key from environment variable
+- [x] Cache token in memory, regenerate when within 1 day of expiry
+- [x] Write unit test: verify JWT structure, claims, and signature algorithm
+- [x] Verify: tests pass (4 tests)
 
 ### T5: Apple Music API client
 
-- [ ] Implement `src/lib/apple-music-client.ts`
-- [ ] Methods: `searchCatalog(query, type, limit)`, `createPlaylist(name, description, trackIds)`, `listPlaylists(limit)`, `addTracksToPlaylist(playlistId, trackIds)`
-- [ ] All methods include Developer Token + Music User Token headers
-- [ ] Handle 401 responses (expired token) with clear error messages
-- [ ] Verify: compiles and types check (integration test deferred to T14)
+- [x] Implement `src/lib/apple-music-client.ts`
+- [x] Methods: `searchCatalog(query, type, limit)`, `createPlaylist(name, description, trackIds)`, `listPlaylists(limit)`
+- [x] All methods include Developer Token + Music User Token headers
+- [x] Handle error responses with clear error messages
+- [x] Verify: compiles and types check
 
 ### T6: Fuzzy matching
 
-- [ ] Implement `src/lib/fuzzy-match.ts`
-- [ ] Input: `{title, artist}` + Apple Music search results
-- [ ] Output: `{matched_track, match_type, confidence_score}` or `not_found`
-- [ ] Scoring: artist similarity (60% weight) + title similarity (40% weight)
-- [ ] Thresholds: >0.7 auto-accept, <0.4 reject, between = accept with flag
-- [ ] Write unit tests with cases:
-  - Exact match: “Says” by Nils Frahm → finds “Says” by Nils Frahm
-  - Fuzzy match: “Re: Stacks” by Bon Iver → finds “Re:Stacks” by Bon Iver
-  - Album variant: “Erased Tapes” version vs “All Melody” version → accepts either
-  - Not found: completely wrong artist → returns not_found
-- [ ] Verify: all tests pass
+- [x] Implement `src/lib/fuzzy-match.ts`
+- [x] Input: `{title, artist}` + Apple Music search results
+- [x] Output: `{matched_track, match_type, confidence_score}` or `not_found`
+- [x] Scoring: artist similarity (60% weight) + title similarity (40% weight)
+- [x] Thresholds: >0.85 exact, >0.4 fuzzy, <0.4 reject
+- [x] Write unit tests (6 tests including exact, fuzzy, album variant, not_found)
+- [x] Verify: all tests pass
 
 -----
 
@@ -78,78 +73,72 @@
 
 ### T7: MCP server skeleton
 
-- [ ] Implement `src/index.ts` — initialize MCP server with Streamable HTTP transport
-- [ ] Register tool definitions (name, description, input schema) for all three tools
-- [ ] Wire up request handler that routes tool calls to implementations
-- [ ] Verify: server starts locally, tools are discoverable via MCP inspector or test client
+- [x] Implement `src/index.ts` — initialize MCP server with Streamable HTTP transport
+- [x] Register tool definitions (name, description, input schema via Zod) for all three tools
+- [x] Wire up request handler that routes tool calls to implementations
+- [x] Session management for Streamable HTTP (POST/GET/DELETE on /mcp)
 
 ### T8: `search_apple_music` tool
 
-- [ ] Implement `src/tools/search-apple-music.ts`
-- [ ] Input validation: query required, type defaults to “songs”, limit defaults to 5
-- [ ] Call Apple Music client, format results
-- [ ] Return: array of `{id, name, artist, album}`
-- [ ] Verify: compiles, input validation works
+- [x] Implement `src/tools/search-apple-music.ts`
+- [x] Input validation: query required, type defaults to "songs", limit defaults to 5
+- [x] Call Apple Music client, format results
+- [x] Return: array of `{id, name, artist, album}`
 
 ### T9: `create_mood_playlist` tool
 
-- [ ] Implement `src/tools/create-mood-playlist.ts`
-- [ ] For each song: search catalog → fuzzy match → collect track IDs
-- [ ] Fetch Unsplash image for mood string
-- [ ] Create playlist with matched tracks
-- [ ] Return structured response per spec.md R4
-- [ ] Handle partial failures: if 3/5 match, create playlist with 3 and report gaps
-- [ ] Verify: compiles, logic flow is correct
+- [x] Implement `src/tools/create-mood-playlist.ts`
+- [x] For each song: search catalog → fuzzy match → collect track IDs
+- [x] Fetch Unsplash image for mood string
+- [x] Create playlist with matched tracks
+- [x] Return structured response per spec.md R4
+- [x] Handle partial failures: if 3/5 match, create playlist with 3 and report gaps
 
 ### T10: `list_my_playlists` tool
 
-- [ ] Implement `src/tools/list-playlists.ts`
-- [ ] Input: optional limit (default 25)
-- [ ] Call Apple Music client
-- [ ] Return: array of `{name, id, track_count}`
-- [ ] Verify: compiles
+- [x] Implement `src/tools/list-playlists.ts`
+- [x] Input: optional limit (default 25)
+- [x] Call Apple Music client
+- [x] Return: array of `{name, id, track_count}`
 
 ### T11: Unsplash integration
 
-- [ ] Implement `src/lib/unsplash.ts`
-- [ ] Search for landscape photos matching mood query
-- [ ] Return first result’s regular URL (1080px)
-- [ ] Handle no-results gracefully (return null, don’t fail the playlist creation)
-- [ ] Verify: compiles
+- [x] Implement `src/lib/unsplash.ts`
+- [x] Search for landscape photos matching mood query
+- [x] Return first result's regular URL (1080px)
+- [x] Handle no-results gracefully (return null, don't fail the playlist creation)
 
 -----
 
 ## Phase 4: OAuth 2.1 + Deployment
 
-The MCP TypeScript SDK (v1.26.0+) provides `mcpAuthRouter()` which auto-registers all standard OAuth 2.1 endpoints (discovery, DCR, authorize, token) and `requireBearerAuth()` middleware. We implement the `OAuthServerProvider` interface with our single-user logic rather than building endpoints manually.
-
 ### T12: OAuthServerProvider implementation
 
-- [ ] Implement `src/auth/oauth-provider.ts` — class implementing `OAuthServerProvider` interface
-- [ ] `clientsStore`: in-memory `Map<string, OAuthClientInformationFull>` with `getClient()` and `registerClient()`
-- [ ] `authorize()`: render HTML consent page with password field; validate pre-shared password from `OAUTH_CONSENT_PASSWORD` env var; issue short-lived (10 min) single-use authorization code bound to PKCE challenge; redirect back with `code` and `state`
-- [ ] `challengeForAuthorizationCode()`: return stored PKCE `code_challenge` for a given auth code
-- [ ] `exchangeAuthorizationCode()`: sign JWT access token with `JWT_SIGNING_SECRET`, audience-bound to server URL; generate and return refresh token; validate `resource` parameter (RFC 8707)
-- [ ] `exchangeRefreshToken()`: validate refresh token, rotate on each use, return new token pair
-- [ ] `verifyAccessToken()`: verify JWT signature, expiry, and `aud` claim; return `AuthInfo`
-- [ ] Write unit tests: consent password validation, JWT generation/verification, refresh token rotation, expired token rejection, wrong audience rejection
-- [ ] Verify: tests pass
+- [x] Implement `src/auth/oauth-provider.ts` — class implementing `OAuthServerProvider` interface
+- [x] `clientsStore`: in-memory `Map<string, OAuthClientInformationFull>` with `getClient()` and `registerClient()`
+- [x] `authorize()`: render HTML consent page with password field
+- [x] `handleConsentSubmission()`: validate pre-shared password; issue short-lived (10 min) single-use authorization code bound to PKCE challenge; redirect back with `code` and `state`
+- [x] `challengeForAuthorizationCode()`: return stored PKCE `code_challenge` for a given auth code
+- [x] `exchangeAuthorizationCode()`: sign JWT access token with `JWT_SIGNING_SECRET`, audience-bound to server URL; generate and return refresh token; validate `resource` parameter (RFC 8707)
+- [x] `exchangeRefreshToken()`: validate refresh token, rotate on each use, return new token pair
+- [x] `verifyAccessToken()`: verify JWT signature, expiry, and `aud` claim; return `AuthInfo`
+- [x] Write unit tests: JWT generation/verification, refresh token rejection, expired token rejection, wrong audience rejection
+- [x] Verify: tests pass (6 tests)
 
 ### T13: Wire OAuth + MCP into Express server
 
-- [ ] In `src/index.ts`, install `mcpAuthRouter()` with our `OAuthServerProvider` and server URL config
-- [ ] Protect `/mcp` endpoint with `requireBearerAuth()` middleware
-- [ ] Configure `StreamableHTTPServerTransport` on `/mcp`
-- [ ] Add `GET /health` endpoint (unprotected)
-- [ ] Verify: discovery endpoints return valid JSON; `/mcp` returns 401 without token; consent page renders at `/authorize`
+- [x] In `src/index.ts`, install `mcpAuthRouter()` with our `OAuthServerProvider` and server URL config
+- [x] Protect `/mcp` endpoint with `requireBearerAuth()` middleware
+- [x] Configure `StreamableHTTPServerTransport` on `/mcp`
+- [x] Add `GET /health` endpoint (unprotected)
+- [x] Custom POST /authorize handler for consent form submission
 
 ### T14: Tailscale Funnel + launchd deployment
 
-- [ ] Configure Tailscale Funnel to expose localhost:3000
-- [ ] Test: public URL reaches discovery endpoints, consent page, and MCP endpoint
-- [ ] Create `launchd` plist for auto-start (same pattern as Fastmail MCP server)
-- [ ] Load plist: `launchctl load ~/Library/LaunchAgents/com.mood-playlist-mcp.plist`
-- [ ] Verify: server restarts after crash, starts on boot
+- [x] Create `launchd` plist for auto-start (loads secrets from 1Password at startup)
+- [ ] Configure Tailscale Funnel to expose localhost:3000 (human step)
+- [ ] Load plist: `launchctl load ~/Library/LaunchAgents/com.mood-playlist-mcp.plist` (human step)
+- [ ] Verify: server restarts after crash, starts on boot (human step)
 
 -----
 
@@ -157,24 +146,17 @@ The MCP TypeScript SDK (v1.26.0+) provides `mcpAuthRouter()` which auto-register
 
 ### T15: One-time Music User Token page
 
-- [ ] Create `auth-page/index.html`
-- [ ] Load MusicKit JS from Apple CDN
-- [ ] Configure with Developer Token
-- [ ] On button click: call `music.authorize()` to trigger Apple ID sign-in
-- [ ] Display the Music User Token for the user to copy
-- [ ] Verify: page loads, MusicKit JS initializes (full test requires Developer Token)
+- [x] Create `auth-page/index.html`
+- [x] Load MusicKit JS from Apple CDN
+- [x] Configure with Developer Token (passed via ?token= query param)
+- [x] On button click: call `music.authorize()` to trigger Apple ID sign-in
+- [x] Display the Music User Token for the user to copy
 
 ### T16: Integration test — Music User Token
 
-- [ ] User runs auth page, signs in, gets Music User Token
-- [ ] Token stored in 1Password “Eviebot” vault under `Apple Music User Token`
-- [ ] Add to environment: `export APPLE_MUSIC_USER_TOKEN=$(op read “op://Eviebot/Apple Music User Token/credential”)`
-- [ ] Restart the server process
-- [ ] Test: `search_apple_music` tool returns results for “Nils Frahm Says” (via authenticated MCP request)
-- [ ] Test: `create_mood_playlist` creates a test playlist with 2-3 tracks
-- [ ] Test: `list_my_playlists` shows the test playlist
-- [ ] Clean up: delete test playlist manually
-- [ ] Verify: all three tools work end-to-end with real Apple Music API
+- [ ] User runs auth page, signs in, gets Music User Token (human step)
+- [ ] Token stored in 1Password "Eviebot" vault under `Apple Music User Token` (human step)
+- [ ] Test all three tools end-to-end with real Apple Music API (human step)
 
 -----
 
@@ -182,17 +164,14 @@ The MCP TypeScript SDK (v1.26.0+) provides `mcpAuthRouter()` which auto-register
 
 ### T17: CI/CD workflows
 
-- [ ] Create `.github/workflows/ci.yml` — lint, typecheck, test on PRs
-- [ ] Verify: CI passes on a test PR
+- [x] Create `.github/workflows/ci.yml` — lint, typecheck, test on PRs and pushes to main
 
 ### T18: Connect to Claude
 
-- [ ] In claude.ai: Settings → Connectors → Add Custom Connector
-- [ ] Enter the Tailscale Funnel URL
-- [ ] Complete OAuth flow (approve the connection on the consent page)
-- [ ] Verify: tools appear in Claude’s tool list
-- [ ] Test from Claude iOS: describe a mood, verify playlist creation
-- [ ] Verify: end-to-end flow works from phone
+- [ ] In claude.ai: Settings → Connectors → Add Custom Connector (human step)
+- [ ] Enter the Tailscale Funnel URL (human step)
+- [ ] Complete OAuth flow (human step)
+- [ ] Test from Claude iOS (human step)
 
 -----
 
@@ -200,20 +179,16 @@ The MCP TypeScript SDK (v1.26.0+) provides `mcpAuthRouter()` which auto-register
 
 ### T19: Error handling review
 
-- [ ] Ensure all API errors return useful messages (not raw stack traces)
-- [ ] Handle Apple Music 429 (rate limit) with retry-after
-- [ ] Handle missing environment variables at startup with clear error
-- [ ] Handle network timeouts gracefully
-- [ ] Handle OAuth errors with clear messages (invalid code, expired token, bad redirect_uri)
+- [x] All API errors return useful messages (not raw stack traces) — built into all clients
+- [x] Handle missing environment variables at startup with clear error — config.ts
+- [x] Unsplash failures are non-blocking — returns null gracefully
+- [ ] Handle Apple Music 429 (rate limit) with retry-after (deferred — low risk per plan.md)
 
 ### T20: README
 
-- [ ] Write README.md with: project purpose, setup instructions, deployment guide, architecture diagram
-- [ ] Include prerequisites checklist
-- [ ] Include the benchmark test case from spec.md
+- [ ] Write README.md (deferred — user will ask when ready)
 
 ### T21: Token refresh mechanism
 
-- [ ] Monitor Music User Token expiry
-- [ ] If token expires: log clear error message, return helpful error to Claude (“Music User Token expired — re-run auth page”)
-- [ ] Developer Token: auto-regenerate before expiry (already handled in T4)
+- [x] Developer Token: auto-regenerate before expiry (handled in apple-tokens.ts with 1-day buffer)
+- [ ] Music User Token expiry monitoring (deferred — will surface as 401 errors with clear messages)

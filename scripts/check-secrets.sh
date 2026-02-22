@@ -22,10 +22,10 @@ for ref in "${secrets[@]}"; do
   name=$(echo "$ref" | cut -d'/' -f4)
   if op read "$ref" > /dev/null 2>&1; then
     printf "  OK  %s\n" "$name"
-    ((pass++))
+    pass=$((pass + 1))
   else
     printf "  MISSING  %s\n" "$name"
-    ((fail++))
+    fail=$((fail + 1))
   fi
 done
 

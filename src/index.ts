@@ -6,6 +6,7 @@
 import express from "express";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { mcpAuthRouter } from "@modelcontextprotocol/sdk/server/auth/router.js";
 import { requireBearerAuth } from "@modelcontextprotocol/sdk/server/auth/middleware/bearerAuth.js";
 import { z } from "zod";
@@ -51,68 +52,18 @@ const oauthProvider = new MoodPlaylistOAuthProvider({
   serverUrl: config.serverUrl,
 });
 
-// MCP Server
-const mcpServer = new McpServer({
-  name: "mood-playlist-mcp",
-  version: "1.0.0",
-});
-
-// Register tools
-mcpServer.tool(
-  "search_apple_music",
-  "Search the Apple Music catalog for songs, albums, or artists",
-  {
-    query: z.string().describe("Search terms"),
-    type: z.enum(["songs", "albums", "artists"]).default("songs").describe("Type of result"),
-    limit: z.number().min(1).max(25).default(5).describe("Number of results"),
-  },
-  async (params) => {
-    const result = await handleSearchAppleMusic(params, getAppleMusicConfig());
-    return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
-  },
-);
-
-mcpServer.tool(
-  "create_mood_playlist",
-  "Create an Apple Music playlist from a mood description and song picks",
-  {
-    mood: z.string().describe("Mood description for cover image and playlist description"),
-    songs: z
-      .array(
-        z.object({
-          title: z.string().describe("Song title"),
-          artist: z.string().describe("Artist name"),
-        }),
-      )
-      .min(1)
-      .max(10)
-      .describe("Songs to add (typically 5)"),
-    playlist_name: z.string().describe("Evocative playlist name"),
-  },
-  async (params) => {
-    const result = await handleCreateMoodPlaylist(
-      params,
-      getAppleMusicConfig(),
-      config.unsplashAccessKey,
-    );
-    return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
-  },
-);
-
-mcpServer.tool(
-  "list_my_playlists",
-  "List playlists in your Apple Music library",
-  {
-    limit: z.number().min(1).max(100).default(25).describe("Number of playlists to return"),
-  },
-  async (params) => {
-    const result = await handleListPlaylists(params, getAppleMusicConfig());
-    return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
-  },
-);
-
 // Express app
 const app = express();
+
+// Trust proxy (Tailscale Funnel sends X-Forwarded-For)
+app.set("trust proxy", 1);
+
+// Request logging
+app.use((req, _res, next) => {
+  console.log(`${req.method} ${req.path}`);
+  next();
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -153,55 +104,136 @@ const authMiddleware = requireBearerAuth({ verifier: oauthProvider });
 // Session management for Streamable HTTP
 const transports = new Map<string, StreamableHTTPServerTransport>();
 
-app.post("/mcp", authMiddleware, async (req, res) => {
+function createMcpServer(): McpServer {
+  const server = new McpServer({
+    name: "mood-playlist-mcp",
+    version: "1.0.0",
+  });
+
+  server.tool(
+    "search_apple_music",
+    "Search the Apple Music catalog for songs, albums, or artists",
+    {
+      query: z.string().describe("Search terms"),
+      type: z.enum(["songs", "albums", "artists"]).default("songs").describe("Type of result"),
+      limit: z.number().min(1).max(25).default(5).describe("Number of results"),
+    },
+    async (params) => {
+      const result = await handleSearchAppleMusic(params, getAppleMusicConfig());
+      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+    },
+  );
+
+  server.tool(
+    "create_mood_playlist",
+    "Create an Apple Music playlist from a mood description and song picks",
+    {
+      mood: z.string().describe("Mood description for cover image and playlist description"),
+      songs: z
+        .array(
+          z.object({
+            title: z.string().describe("Song title"),
+            artist: z.string().describe("Artist name"),
+          }),
+        )
+        .min(1)
+        .max(10)
+        .describe("Songs to add (typically 5)"),
+      playlist_name: z.string().describe("Evocative playlist name"),
+    },
+    async (params) => {
+      const result = await handleCreateMoodPlaylist(
+        params,
+        getAppleMusicConfig(),
+        config.unsplashAccessKey,
+      );
+      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+    },
+  );
+
+  server.tool(
+    "list_my_playlists",
+    "List playlists in your Apple Music library",
+    {
+      limit: z.number().min(1).max(100).default(25).describe("Number of playlists to return"),
+    },
+    async (params) => {
+      const result = await handleListPlaylists(params, getAppleMusicConfig());
+      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+    },
+  );
+
+  return server;
+}
+
+// MCP request handler (shared by / and /mcp routes)
+async function handleMcpPost(req: express.Request, res: express.Response): Promise<void> {
   try {
     const sessionId = req.headers["mcp-session-id"] as string | undefined;
     let transport: StreamableHTTPServerTransport;
 
     if (sessionId && transports.has(sessionId)) {
       transport = transports.get(sessionId)!;
-    } else {
+    } else if (!sessionId && isInitializeRequest(req.body)) {
       transport = new StreamableHTTPServerTransport({
-        sessionIdGenerator: () => randomSessionId(),
+        sessionIdGenerator: () => crypto.randomUUID(),
+        onsessioninitialized: (sid) => {
+          transports.set(sid, transport);
+        },
       });
-      await mcpServer.connect(transport);
-      // Store after connection so we have the session ID
-      transport.sessionId && transports.set(transport.sessionId, transport);
+
+      transport.onclose = () => {
+        const sid = transport.sessionId;
+        if (sid) transports.delete(sid);
+      };
+
+      const server = createMcpServer();
+      await server.connect(transport);
+    } else {
+      res.status(400).json({
+        jsonrpc: "2.0",
+        error: { code: -32000, message: "Bad request: no session ID or not an initialize request" },
+        id: null,
+      });
+      return;
     }
 
-    await transport.handleRequest(req, res);
+    await transport.handleRequest(req, res, req.body);
   } catch (err) {
     console.error("MCP request error:", err);
     if (!res.headersSent) {
       res.status(500).json({ error: "Internal server error" });
     }
   }
-});
+}
 
-app.get("/mcp", authMiddleware, async (req, res) => {
+async function handleMcpGet(req: express.Request, res: express.Response): Promise<void> {
   const sessionId = req.headers["mcp-session-id"] as string | undefined;
   if (!sessionId || !transports.has(sessionId)) {
     res.status(400).json({ error: "Invalid or missing session ID" });
     return;
   }
   const transport = transports.get(sessionId)!;
-  await transport.handleRequest(req, res);
-});
+  await transport.handleRequest(req, res, req.body);
+}
 
-app.delete("/mcp", authMiddleware, async (req, res) => {
+async function handleMcpDelete(req: express.Request, res: express.Response): Promise<void> {
   const sessionId = req.headers["mcp-session-id"] as string | undefined;
   if (sessionId && transports.has(sessionId)) {
     const transport = transports.get(sessionId)!;
-    await transport.handleRequest(req, res);
-    transports.delete(sessionId);
+    await transport.handleRequest(req, res, req.body);
   } else {
     res.status(400).json({ error: "Invalid or missing session ID" });
   }
-});
-
-function randomSessionId(): string {
-  return Math.random().toString(36).substring(2) + Date.now().toString(36);
 }
+
+// Mount MCP handlers on both /mcp and / (Claude posts to root after OAuth)
+app.post("/mcp", authMiddleware, handleMcpPost);
+app.get("/mcp", authMiddleware, handleMcpGet);
+app.delete("/mcp", authMiddleware, handleMcpDelete);
+app.post("/", authMiddleware, handleMcpPost);
+app.get("/", authMiddleware, handleMcpGet);
+app.delete("/", authMiddleware, handleMcpDelete);
 
 // Start server
 app.listen(config.port, () => {

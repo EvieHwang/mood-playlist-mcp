@@ -118,7 +118,12 @@ function createMcpServer(): McpServer {
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       } catch (err) {
         console.error("search_apple_music error:", err);
-        return { content: [{ type: "text", text: `Error: ${err instanceof Error ? err.message : String(err)}` }], isError: true };
+        return {
+          content: [
+            { type: "text", text: `Error: ${err instanceof Error ? err.message : String(err)}` },
+          ],
+          isError: true,
+        };
       }
     },
   );
@@ -146,7 +151,12 @@ function createMcpServer(): McpServer {
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       } catch (err) {
         console.error("create_mood_playlist error:", err);
-        return { content: [{ type: "text", text: `Error: ${err instanceof Error ? err.message : String(err)}` }], isError: true };
+        return {
+          content: [
+            { type: "text", text: `Error: ${err instanceof Error ? err.message : String(err)}` },
+          ],
+          isError: true,
+        };
       }
     },
   );
@@ -163,7 +173,12 @@ function createMcpServer(): McpServer {
         return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
       } catch (err) {
         console.error("list_my_playlists error:", err);
-        return { content: [{ type: "text", text: `Error: ${err instanceof Error ? err.message : String(err)}` }], isError: true };
+        return {
+          content: [
+            { type: "text", text: `Error: ${err instanceof Error ? err.message : String(err)}` },
+          ],
+          isError: true,
+        };
       }
     },
   );

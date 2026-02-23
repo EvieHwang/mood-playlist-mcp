@@ -17,6 +17,15 @@ export interface AppleTokenConfig {
   privateKey: string;
 }
 
+/** Normalize a PEM key that may have spaces instead of newlines (1Password format). */
+function normalizePem(key: string): string {
+  const match = key.match(/-----BEGIN PRIVATE KEY-----(.+)-----END PRIVATE KEY-----/s);
+  if (!match) return key;
+  const base64 = match[1].replace(/\s+/g, "");
+  const lines = base64.match(/.{1,64}/g) || [];
+  return `-----BEGIN PRIVATE KEY-----\n${lines.join("\n")}\n-----END PRIVATE KEY-----`;
+}
+
 /** Generate an Apple Music Developer Token (JWT signed with ES256). */
 export function generateDeveloperToken(config: AppleTokenConfig): string {
   const now = Date.now();
@@ -25,8 +34,9 @@ export function generateDeveloperToken(config: AppleTokenConfig): string {
     return cachedToken;
   }
 
+  const pemKey = normalizePem(config.privateKey);
   const nowSeconds = Math.floor(now / 1000);
-  const token = jwt.sign({}, config.privateKey, {
+  const token = jwt.sign({}, pemKey, {
     algorithm: "ES256",
     expiresIn: MAX_TOKEN_AGE_SECONDS,
     issuer: config.teamId,

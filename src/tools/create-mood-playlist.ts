@@ -51,19 +51,16 @@ export async function handleCreateMoodPlaylist(
   // Fetch cover image (non-blocking failure)
   const coverImageUrl = await fetchMoodImage(unsplashAccessKey, mood);
 
-  // Build description
-  let description = mood;
-  if (coverImageUrl) {
-    description += `\n\nCover image: ${coverImageUrl}`;
-  }
-
-  // Create the playlist
-  const playlist = await createPlaylist(musicConfig, playlist_name, description, matchedIds);
+  // Create the playlist (Apple Music API doesn't support custom artwork upload)
+  const playlist = await createPlaylist(musicConfig, playlist_name, mood, matchedIds);
 
   return {
     playlist_name: playlist.name,
     tracks_added: trackResults,
     cover_image_url: coverImageUrl ?? undefined,
+    cover_image_note: coverImageUrl
+      ? "Apple Music doesn't support setting playlist artwork via API. Share this image URL with the user so they can set it manually if they want."
+      : undefined,
     apple_music_playlist_url: `https://music.apple.com/library/playlist/${playlist.id}`,
   };
 }

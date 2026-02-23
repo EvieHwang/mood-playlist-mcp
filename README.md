@@ -97,4 +97,4 @@ Two independent auth layers:
 
 ## License
 
-MIT
+AGPL-3.0

@@ -1,6 +1,6 @@
 # mood-playlist-mcp
 
-A remote MCP server that lets Claude create Apple Music playlists from mood descriptions. You describe a vibe, Claude picks songs, and they show up in your Apple Music library with a thematic cover image. Apple Music's Autoplay continues from there.
+A remote MCP server that lets Claude create Apple Music playlists from mood descriptions. You describe a vibe, Claude picks songs, and they show up in your Apple Music library. Apple Music's Autoplay continues from there.
 
 ## How it works
 
@@ -18,7 +18,7 @@ Apple Music API
 Claude has access to three tools:
 
 - **search_apple_music** — search the Apple Music catalog for songs, albums, or artists
-- **create_mood_playlist** — create a playlist from a mood description and song picks, with an Unsplash cover image
+- **create_mood_playlist** — create a playlist from a mood description and song picks
 - **list_my_playlists** — list playlists in your Apple Music library
 
 ## Prerequisites
@@ -39,7 +39,6 @@ All secrets are loaded from 1Password at startup via `op read`. See `scripts/sta
 | `APPLE_KEY_ID` | Apple MusicKit Key ID |
 | `APPLE_PRIVATE_KEY` | Apple MusicKit Private Key |
 | `APPLE_MUSIC_USER_TOKEN` | Apple Music User Token |
-| `UNSPLASH_ACCESS_KEY` | Unsplash Access Key |
 | `OAUTH_CONSENT_PASSWORD` | Mood Playlist OAuth Consent Password |
 | `JWT_SIGNING_SECRET` | Mood Playlist JWT Secret |
 

@@ -58,12 +58,6 @@ const app = express();
 // Trust proxy (Tailscale Funnel sends X-Forwarded-For)
 app.set("trust proxy", 1);
 
-// Request logging
-app.use((req, _res, next) => {
-  console.log(`${req.method} ${req.path}`);
-  next();
-});
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -119,8 +113,13 @@ function createMcpServer(): McpServer {
       limit: z.number().min(1).max(25).default(5).describe("Number of results"),
     },
     async (params) => {
-      const result = await handleSearchAppleMusic(params, getAppleMusicConfig());
-      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      try {
+        const result = await handleSearchAppleMusic(params, getAppleMusicConfig());
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      } catch (err) {
+        console.error("search_apple_music error:", err);
+        return { content: [{ type: "text", text: `Error: ${err instanceof Error ? err.message : String(err)}` }], isError: true };
+      }
     },
   );
 
@@ -128,7 +127,7 @@ function createMcpServer(): McpServer {
     "create_mood_playlist",
     "Create an Apple Music playlist from a mood description and song picks",
     {
-      mood: z.string().describe("Mood description for cover image and playlist description"),
+      mood: z.string().describe("Mood or vibe description for the playlist"),
       songs: z
         .array(
           z.object({
@@ -142,12 +141,13 @@ function createMcpServer(): McpServer {
       playlist_name: z.string().describe("Evocative playlist name"),
     },
     async (params) => {
-      const result = await handleCreateMoodPlaylist(
-        params,
-        getAppleMusicConfig(),
-        config.unsplashAccessKey,
-      );
-      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      try {
+        const result = await handleCreateMoodPlaylist(params, getAppleMusicConfig());
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      } catch (err) {
+        console.error("create_mood_playlist error:", err);
+        return { content: [{ type: "text", text: `Error: ${err instanceof Error ? err.message : String(err)}` }], isError: true };
+      }
     },
   );
 
@@ -158,8 +158,13 @@ function createMcpServer(): McpServer {
       limit: z.number().min(1).max(100).default(25).describe("Number of playlists to return"),
     },
     async (params) => {
-      const result = await handleListPlaylists(params, getAppleMusicConfig());
-      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      try {
+        const result = await handleListPlaylists(params, getAppleMusicConfig());
+        return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+      } catch (err) {
+        console.error("list_my_playlists error:", err);
+        return { content: [{ type: "text", text: `Error: ${err instanceof Error ? err.message : String(err)}` }], isError: true };
+      }
     },
   );
 

@@ -4,7 +4,6 @@
 
 import { searchCatalog, createPlaylist, type AppleMusicConfig } from "../lib/apple-music-client.js";
 import { findBestMatch, type SongQuery, type FuzzyMatchResult } from "../lib/fuzzy-match.js";
-import { fetchMoodImage } from "../lib/unsplash.js";
 
 export interface CreateMoodPlaylistInput {
   mood: string;
@@ -21,7 +20,6 @@ interface TrackResult {
 export async function handleCreateMoodPlaylist(
   input: CreateMoodPlaylistInput,
   musicConfig: AppleMusicConfig,
-  unsplashAccessKey: string,
 ) {
   const { mood, songs, playlist_name } = input;
 
@@ -48,19 +46,12 @@ export async function handleCreateMoodPlaylist(
     };
   }
 
-  // Fetch cover image (non-blocking failure)
-  const coverImageUrl = await fetchMoodImage(unsplashAccessKey, mood);
-
-  // Create the playlist (Apple Music API doesn't support custom artwork upload)
+  // Create the playlist
   const playlist = await createPlaylist(musicConfig, playlist_name, mood, matchedIds);
 
   return {
     playlist_name: playlist.name,
     tracks_added: trackResults,
-    cover_image_url: coverImageUrl ?? undefined,
-    cover_image_note: coverImageUrl
-      ? "Apple Music doesn't support setting playlist artwork via API. Share this image URL with the user so they can set it manually if they want."
-      : undefined,
     apple_music_playlist_url: `https://music.apple.com/library/playlist/${playlist.id}`,
   };
 }

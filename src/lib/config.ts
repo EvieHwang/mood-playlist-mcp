@@ -10,7 +10,6 @@ export interface Config {
   appleKeyId: string;
   applePrivateKey: string;
   appleMusicUserToken: string;
-  unsplashAccessKey: string;
   oauthConsentPassword: string;
   jwtSigningSecret: string;
 }
@@ -19,7 +18,6 @@ const REQUIRED_VARS = [
   "APPLE_TEAM_ID",
   "APPLE_KEY_ID",
   "APPLE_PRIVATE_KEY",
-  "UNSPLASH_ACCESS_KEY",
   "OAUTH_CONSENT_PASSWORD",
   "JWT_SIGNING_SECRET",
 ] as const;
@@ -45,7 +43,6 @@ export function loadConfig(): Config {
     appleKeyId: requireEnv("APPLE_KEY_ID"),
     applePrivateKey: requireEnv("APPLE_PRIVATE_KEY"),
     appleMusicUserToken: process.env.APPLE_MUSIC_USER_TOKEN || "",
-    unsplashAccessKey: requireEnv("UNSPLASH_ACCESS_KEY"),
     oauthConsentPassword: requireEnv("OAUTH_CONSENT_PASSWORD"),
     jwtSigningSecret: requireEnv("JWT_SIGNING_SECRET"),
   };

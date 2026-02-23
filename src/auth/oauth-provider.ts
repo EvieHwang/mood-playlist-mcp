@@ -79,7 +79,7 @@ export class MoodPlaylistOAuthProvider implements OAuthServerProvider {
     <h1>Mood Playlist MCP</h1>
     <p>An application wants to connect to your Mood Playlist server.</p>
     <p><strong>Client:</strong> ${escapeHtml(client.client_name || client.client_id)}</p>
-    <form method="POST" action="/authorize">
+    <form method="POST" action="/consent">
       <input type="hidden" name="client_id" value="${escapeHtml(client.client_id)}">
       <input type="hidden" name="redirect_uri" value="${escapeHtml(params.redirectUri)}">
       <input type="hidden" name="state" value="${escapeHtml(params.state || "")}">

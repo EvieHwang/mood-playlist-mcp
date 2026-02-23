@@ -121,6 +121,12 @@ app.get("/health", (_req, res) => {
   res.json({ status: "ok", server: "mood-playlist-mcp" });
 });
 
+// Serve MusicKit auth page (unprotected, one-time setup)
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+app.use("/auth-page", express.static(path.join(__dirname, "..", "auth-page")));
+
 // OAuth routes (auto-registers discovery, registration, authorize GET, token endpoints)
 const serverUrl = new URL(config.serverUrl);
 app.use(
@@ -133,8 +139,8 @@ app.use(
   }),
 );
 
-// Custom POST /authorize handler for consent form submission
-app.post("/authorize", (req, res) => {
+// Consent form submission (separate from /authorize to avoid SDK route conflict)
+app.post("/consent", (req, res) => {
   oauthProvider.handleConsentSubmission(req.body, res).catch((err) => {
     console.error("Consent submission error:", err);
     res.status(500).send("Internal error");

@@ -20,8 +20,20 @@ import type { AppleMusicConfig } from "./lib/apple-music-client.js";
 
 const config = loadConfig();
 
+if (!config.appleMusicUserToken) {
+  console.warn(
+    "WARNING: APPLE_MUSIC_USER_TOKEN not set. Server will start but Apple Music tools will fail.",
+  );
+  console.warn("Run the auth page to obtain a Music User Token and store it in 1Password.");
+}
+
 // Apple Music configuration (developer token + user token)
 function getAppleMusicConfig(): AppleMusicConfig {
+  if (!config.appleMusicUserToken) {
+    throw new Error(
+      "Music User Token not configured. Run the auth page (auth-page/index.html) to obtain one, then store it in 1Password and restart the server.",
+    );
+  }
   return {
     developerToken: generateDeveloperToken({
       teamId: config.appleTeamId,
